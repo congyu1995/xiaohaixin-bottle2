@@ -1,21 +1,19 @@
 # Dependencies
 node_modules/
 
-# Build
+# Build output
 dist/
 build/
 
-# Environment
+# Environment variables
 .env
 .env.local
-.env.production.local
+.env.*.local
 
 # Logs
 logs/
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # OS
 .DS_Store
@@ -26,16 +24,15 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
-*.iml
 
-# Testing
-coverage/
-.nyc_output/
+# Client build
+client/build/
+client/node_modules/
 
-# MongoDB
-data/db/
+# Server directory (现在代码在根目录，保留server目录作为备份)
+server/node_modules/
+server/dist/
 
-# Misc
-*.tgz
-.npm
-.eslintcache
+# Temp
+*.tmp
+*.temp
