@@ -1,0 +1,28 @@
+{
+  "name": "mood-bottle",
+  "version": "1.0.0",
+  "description": "小海星·心情漂流瓶 - 匿名心情分享应用",
+  "private": true,
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm start",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "start:server": "cd server && npm run start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/congyu1995/mood-bottle.git"
+  },
+  "keywords": [
+    "mood",
+    "anonymous",
+    "social",
+    "react",
+    "express",
+    "mongodb"
+  ],
+  "author": "congyu1995",
+  "license": "MIT"
+}
