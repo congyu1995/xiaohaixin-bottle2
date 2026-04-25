@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#00acc1" />
+  <title>心情漂流瓶 - 完整版</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #fff;
+      position: relative;
+      overflow-x: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0, 172, 193, 0.3);
+    }
+    .header-title { font-size: 20px; font-weight: 600; }
+    .status-indicator {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      background: rgba(255,255,255,0.2);
+    }
+    .status-indicator.online { background: #4caf50; }
+    .status-indicator.offline { background: #f44336; }
+    .stats-bar {
+      background: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .stat-item { display: flex; align-items: center; gap: 8px; }
+    .stat-label { color: #999; font-size: 14px; }
+    .stat-value { font-size: 18px; font-weight: 600; color: #333; }
+    .stat-value.today { color: #00acc1; }
+    .stat-divider { width: 1px; height: 20px; background: #e0e0e0; margin: 0 20px; }
+    .filter-bar {
+      background: white;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #f0f0f0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .category-tabs { display: flex; gap: 8px; flex: 1; overflow-x: auto; }
+    .category-tabs::-webkit-scrollbar { display: none; }
+    .category-tab {
+      background: #f5f5f5;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .category-tab.active { background: #00acc1; color: white; }
+    .reported-filter {
+      background: white;
+      border: 1px solid #e0e0e0;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-left: 12px;
+    }
+    .reported-filter.active { background: #ffebee; border-color: #f44336; }
+    .main-content { padding: 16px 20px 80px; min-height: calc(100vh - 180px); }
+    .mood-list { display: flex; flex-direction: column; gap: 16px; }
+    .mood-card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .mood-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+    .mood-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .mood-nickname { font-size: 14px; font-weight: 600; color: #00acc1; }
+    .mood-time { font-size: 12px; color: #999; }
+    .mood-content { font-size: 15px; line-height: 1.6; color: #333; margin-bottom: 12px; word-break: break-word; }
+    .mood-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .mood-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .mood-category { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+    .mood-stats { font-size: 12px; color: #999; }
+    .reported-tag { background: #ffebee; color: #f44336; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .mood-actions { display: flex; gap: 8px; }
+    .resonance-btn {
+      background: white;
+      border: 1px solid #e0e0e0;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .resonance-btn.active { background: #fce4ec; border-color: #f48fb1; color: #c2185b; }
+    .report-btn {
+      background: white;
+      border: 1px solid #e0e0e0;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #999;
+    }
+    .report-btn.disabled { color: #ccc; cursor: not-allowed; }
+    .confirm-modal {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      z-index: 20;
+    }
+    .confirm-content { background: white; padding: 24px; border-radius: 12px; text-align: center; max-width: 260px; }
+    .confirm-content p { font-size: 16px; margin-bottom: 8px; }
+    .confirm-hint { color: #999; font-size: 14px !important; }
+    .confirm-actions { display: flex; gap: 12px; margin-top: 16px; }
+    .cancel-btn, .confirm-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .cancel-btn { background: #f5f5f5; border: none; color: #666; }
+    .confirm-btn { background: #f44336; border: none; color: white; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; }
+    .empty-icon { font-size: 64px; margin-bottom: 20px; animation: wave 2s ease-in-out infinite; }
+    @keyframes wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .empty-message { font-size: 18px; color: #666; margin-bottom: 8px; }
+    .empty-hint { font-size: 14px; color: #999; margin-bottom: 24px; }
+    .empty-publish-btn {
+      background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+      border: none;
+      color: white;
+      padding: 12px 32px;
+      border-radius: 24px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .fab-btn {
+      position: fixed;
+      bottom: 24px;
+      right: calc(50% - 240px + 24px);
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+      color: white;
+      font-size: 28px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 172, 193, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 200;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .modal-header h3 { font-size: 18px; color: #333; }
+    .close-btn { background: none; border: none; font-size: 20px; color: #999; cursor: pointer; }
+    .modal-body { padding: 20px; }
+    .input-wrapper { position: relative; margin-bottom: 20px; }
+    .content-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
+      resize: none;
+    }
+    .content-input:focus { outline: none; border-color: #00acc1; }
+    .char-count { position: absolute; bottom: 8px; right: 12px; font-size: 12px; color: #999; }
+    .char-count.warning { color: #f44336; }
+    .category-select { margin-bottom: 20px; }
+    .category-select label { display: block; font-size: 14px; color: #666; margin-bottom: 12px; }
+    .category-options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .category-option {
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .category-option.active { background: #00acc1; border-color: #00acc1; color: white; }
+    .modal-footer { padding: 20px; border-top: 1px solid #f0f0f0; }
+    .publish-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+      border: none;
+      border-radius: 24px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .publish-btn:disabled { background: #e0e0e0; cursor: not-allowed; }
+    .success-message { padding: 60px 20px; text-align: center; }
+    .success-icon { font-size: 48px; margin-bottom: 16px; }
+    .success-message p { font-size: 16px; color: #666; }
+    .loading { text-align: center; padding: 40px; color: #999; }
+    .error-message { text-align: center; padding: 20px; color: #f44336; background: #ffebee; border-radius: 8px; margin: 20px; }
+    @media (max-width: 480px) { .fab-btn { right: 24px; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useCallback } = React;
+
+    // API配置 - 可以修改为你的后端地址
+    const API_BASE_URL = 'http://localhost:3001/api'; // 本地开发
+    // const API_BASE_URL = 'https://your-railway-app.up.railway.app/api'; // 生产环境
+
+    // API请求封装
+    const apiRequest = async (endpoint, options = {}) => {
+      const url = `${API_BASE_URL}${endpoint}`;
+      
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || '请求失败');
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('API请求错误:', error);
+        throw error;
+      }
+    };
+
+    // 工具函数
+    const generateUserId = () => `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const getTodayDateString = () => new Date().toISOString().split('T')[0];
+    
+    const formatTime = (dateString) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return '刚刚';
+      if (diffMins < 60) return `${diffMins}分钟前`;
+      if (diffHours < 24) return `${diffHours}小时前`;
+      if (diffDays < 7) return `${diffDays}天前`;
+      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    };
+
+    const getCategoryColor = (category) => {
+      const colors = { '开心': '#10b981', '焦虑': '#f59e0b', '迷茫': '#3b82f6', '吐槽': '#f97316' };
+      return colors[category] || '#6b7280';
+    };
+
+    const getCategoryBgColor = (category) => {
+      const colors = { '开心': '#d1fae5', '焦虑': '#fef3c7', '迷茫': '#dbeafe', '吐槽': '#fed7aa' };
+      return colors[category] || '#f3f4f6';
+    };
+
+    // 组件
+    const StatsBar = ({ stats }) => (
+      <div className="stats-bar">
+        <div className="stat-item">
+          <span className="stat-label">总心情</span>
+          <span className="stat-value">{stats.total.toLocaleString()}</span>
+        </div>
+        <div className="stat-divider"></div>
+        <div className="stat-item">
+          <span className="stat-label">今日新增</span>
+          <span className="stat-value today">{stats.todayNew}</span>
+        </div>
+      </div>
+    );
+
+    const FilterBar = ({ selectedCategory, onCategoryChange, showOnlyReported, onToggleReported }) => {
+      const categories = ['全部', '开心', '焦虑', '迷茫', '吐槽'];
+      return (
+        <div className="filter-bar">
+          <div className="category-tabs">
+            {categories.map(category => (
+              <button
+                key={category}
+                className={`category-tab ${selectedCategory === category ? 'active' : ''}`}
+                onClick={() => onCategoryChange(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+          <button
+            className={`reported-filter ${showOnlyReported ? 'active' : ''}`}
+            onClick={onToggleReported}
+            title="只看已举报"
+          >
+            🚨
+          </button>
+        </div>
+      );
+    };
+
+    const MoodCard = ({ mood, hasResonanced, hasReported, onToggleResonance, onReport }) => {
+      const [showConfirmReport, setShowConfirmReport] = useState(false);
+
+      const handleReport = () => {
+        if (hasReported) return;
+        setShowConfirmReport(true);
+      };
+
+      const confirmReport = () => {
+        onReport();
+        setShowConfirmReport(false);
+      };
+
+      return (
+        <div className="mood-card">
+          <div className="mood-header">
+            <span className="mood-nickname">{mood.nickname}</span>
+            <span className="mood-time">{formatTime(mood.createdAt)}</span>
+          </div>
+          <div className="mood-content">{mood.content}</div>
+          <div className="mood-footer">
+            <div className="mood-meta">
+              <span className="mood-category" style={{ backgroundColor: getCategoryBgColor(mood.category), color: getCategoryColor(mood.category) }}>
+                {mood.category}
+              </span>
+              <span className="mood-stats">共鸣 {mood.resonanceCount} · 浏览 {mood.viewCount}</span>
+              {mood.isReported && <span className="reported-tag">已举报</span>}
+            </div>
+            <div className="mood-actions">
+              <button className={`resonance-btn ${hasResonanced ? 'active' : ''}`} onClick={onToggleResonance}>
+                {hasResonanced ? '❤️' : '🤍'} 共鸣 {mood.resonanceCount}
+              </button>
+              <button className={`report-btn ${hasReported ? 'disabled' : ''}`} onClick={handleReport} disabled={hasReported}>
+                {hasReported ? '已举报' : '举报'}
+              </button>
+            </div>
+          </div>
+          {showConfirmReport && (
+            <div className="confirm-modal">
+              <div className="confirm-content">
+                <p>确定举报此内容吗？</p>
+                <p className="confirm-hint">我们会尽快处理</p>
+                <div className="confirm-actions">
+                  <button className="cancel-btn" onClick={() => setShowConfirmReport(false)}>取消</button>
+                  <button className="confirm-btn" onClick={confirmReport}>确定</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const EmptyState = ({ category, onPublish }) => (
+      <div className="empty-state">
+        <div className="empty-icon">🌊</div>
+        <div className="empty-message">{category === '全部' ? '大海里还没有任何心情' : `大海里还没有${category}的心情`}</div>
+        <div className="empty-hint">来投递第一只漂流瓶吧~</div>
+        <button className="empty-publish-btn" onClick={onPublish}>+ 投递心情</button>
+      </div>
+    );
+
+    const PublishModal = ({ isOpen, onClose, onPublish, canPublish, dailyCount }) => {
+      const [content, setContent] = useState('');
+      const [selectedCategory, setSelectedCategory] = useState('开心');
+      const [showSuccess, setShowSuccess] = useState(false);
+      const categories = ['开心', '焦虑', '迷茫', '吐槽'];
+      const maxLength = 200;
+      const remainingChars = maxLength - content.length;
+
+      const handlePublish = () => {
+        if (!content.trim() || !canPublish) return;
+        onPublish(content.trim(), selectedCategory);
+        setContent('');
+        setSelectedCategory('开心');
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          onClose();
+        }, 1500);
+      };
+
+      if (!isOpen) return null;
+
+      return (
+        <div className="modal-overlay" onClick={onClose}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            {!showSuccess ? (
+              <>
+                <div className="modal-header">
+                  <h3>投递心情</h3>
+                  <button className="close-btn" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body">
+                  <div className="input-wrapper">
+                    <textarea
+                      className="content-input"
+                      placeholder="写下你的心情..."
+                      value={content}
+                      onChange={e => setContent(e.target.value.slice(0, maxLength))}
+                      maxLength={maxLength}
+                      rows={5}
+                    />
+                    <div className={`char-count ${remainingChars < 20 ? 'warning' : ''}`}>{remainingChars}</div>
+                  </div>
+                  <div className="category-select">
+                    <label>选择分类：</label>
+                    <div className="category-options">
+                      {categories.map(cat => (
+                        <button
+                          key={cat}
+                          className={`category-option ${selectedCategory === cat ? 'active' : ''}`}
+                          onClick={() => setSelectedCategory(cat)}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  {!canPublish && <div style={{ textAlign: 'center', fontSize: 12, color: '#f44336', marginBottom: 12 }}>今日发布已达上限（{dailyCount}/10）</div>}
+                  <button className="publish-btn" onClick={handlePublish} disabled={!content.trim() || !canPublish}>
+                    投递 🌊
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="success-message">
+                <div className="success-icon">🌊</div>
+                <p>你的心情已漂向大海~</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // 主应用
+    function App() {
+      const [moods, setMoods] = useState([]);
+      const [stats, setStats] = useState({ total: 0, todayNew: 0 });
+      const [userState, setUserState] = useState(() => {
+        const saved = localStorage.getItem('mood_bottle_user_state');
+        return saved ? JSON.parse(saved) : {
+          userId: generateUserId(),
+          resonanceIds: [],
+          reportIds: [],
+          dailyPublishCount: 0,
+          lastPublishDate: getTodayDateString(),
+        };
+      });
+      const [selectedCategory, setSelectedCategory] = useState('全部');
+      const [showOnlyReported, setShowOnlyReported] = useState(false);
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const [isOnline, setIsOnline] = useState(true);
+
+      // 持久化用户状态
+      useEffect(() => {
+        localStorage.setItem('mood_bottle_user_state', JSON.stringify(userState));
+      }, [userState]);
+
+      // 加载数据
+      const loadData = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+
+          // 尝试连接后端API
+          const [moodsRes, statsRes] = await Promise.all([
+            apiRequest(`/moods?category=${selectedCategory !== '全部' ? selectedCategory : ''}&reported=${showOnlyReported}`),
+            apiRequest('/stats'),
+          ]);
+
+          setMoods(moodsRes.data || []);
+          setStats(statsRes.data || { total: 0, todayNew: 0 });
+          setIsOnline(true);
+        } catch (err) {
+          console.error('加载数据失败:', err);
+          setError('无法连接到服务器，请检查后端是否启动');
+          setIsOnline(false);
+          // 使用本地数据
+          setMoods([]);
+          setStats({ total: 0, todayNew: 0 });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        loadData();
+      }, [selectedCategory, showOnlyReported]);
+
+      // 操作
+      const toggleResonance = async (moodId) => {
+        try {
+          const hasResonancedBefore = userState.resonanceIds.includes(moodId);
+          
+          const res = await apiRequest('/resonance', {
+            method: 'POST',
+            body: JSON.stringify({ moodId, userId: userState.userId }),
+          });
+
+          setUserState(prev => ({
+            ...prev,
+            resonanceIds: hasResonancedBefore
+              ? prev.resonanceIds.filter(id => id !== moodId)
+              : [...prev.resonanceIds, moodId],
+          }));
+
+          // 更新本地数据
+          setMoods(prev => prev.map(mood =>
+            mood._id === moodId ? { ...mood, resonanceCount: res.data.resonanceCount } : mood
+          ));
+        } catch (err) {
+          console.error('共鸣操作失败:', err);
+          alert('操作失败，请稍后重试');
+        }
+      };
+
+      const reportMood = async (moodId) => {
+        try {
+          await apiRequest('/report', {
+            method: 'POST',
+            body: JSON.stringify({ moodId, userId: userState.userId }),
+          });
+
+          setUserState(prev => ({
+            ...prev,
+            reportIds: [...prev.reportIds, moodId],
+          }));
+
+          setMoods(prev => prev.map(mood =>
+            mood._id === moodId ? { ...mood, isReported: true } : mood
+          ));
+        } catch (err) {
+          console.error('举报操作失败:', err);
+          alert('操作失败，请稍后重试');
+        }
+      };
+
+      const publishMood = async (content, category) => {
+        try {
+          const res = await apiRequest('/moods', {
+            method: 'POST',
+            body: JSON.stringify({
+              content,
+              category,
+              userId: userState.userId,
+            }),
+          });
+
+          // 更新发布计数
+          const today = getTodayDateString();
+          setUserState(prev => ({
+            ...prev,
+            dailyPublishCount: prev.lastPublishDate === today ? prev.dailyPublishCount + 1 : 1,
+            lastPublishDate: today,
+          }));
+
+          // 添加新心情到列表
+          setMoods(prev => [res.data, ...prev]);
+          setStats(prev => ({
+            ...prev,
+            total: prev.total + 1,
+            todayNew: prev.todayNew + 1,
+          }));
+        } catch (err) {
+          console.error('发布失败:', err);
+          alert('发布失败: ' + err.message);
+        }
+      };
+
+      const canPublish = () => {
+        const today = getTodayDateString();
+        if (userState.lastPublishDate !== today) return true;
+        return userState.dailyPublishCount < 10;
+      };
+
+      const hasResonanced = (moodId) => userState.resonanceIds.includes(moodId);
+      const hasReported = (moodId) => userState.reportIds.includes(moodId);
+
+      if (loading) {
+        return (
+          <div className="app">
+            <div className="loading">🌊 加载中...</div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="app">
+          <header className="header">
+            <h1 className="header-title">🌊 心情漂流瓶</h1>
+            <span className={`status-indicator ${isOnline ? 'online' : 'offline'}`}>
+              {isOnline ? '在线' : '离线'}
+            </span>
+          </header>
+          
+          {error && (
+            <div className="error-message">
+              {error}<br />
+              <small>请确保后端服务已启动在 {API_BASE_URL}</small>
+            </div>
+          )}
+          
+          <StatsBar stats={stats} />
+          <FilterBar
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            showOnlyReported={showOnlyReported}
+            onToggleReported={() => setShowOnlyReported(!showOnlyReported)}
+          />
+          <main className="main-content">
+            {filteredMoods.length > 0 ? (
+              <div className="mood-list">
+                {filteredMoods.map(mood => (
+                  <MoodCard
+                    key={mood._id}
+                    mood={mood}
+                    hasResonanced={hasResonanced(mood._id)}
+                    hasReported={hasReported(mood._id)}
+                    onToggleResonance={() => toggleResonance(mood._id)}
+                    onReport={() => reportMood(mood._id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState category={selectedCategory} onPublish={() => setIsModalOpen(true)} />
+            )}
+          </main>
+          <button className="fab-btn" onClick={() => setIsModalOpen(true)}>+</button>
+          <PublishModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onPublish={publishMood}
+            canPublish={canPublish()}
+            dailyCount={userState.dailyPublishCount}
+          />
+        </div>
+      );
+    }
+
+    // 渲染
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
