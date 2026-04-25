@@ -5,15 +5,15 @@
   "private": true,
   "scripts": {
     "install:all": "cd server && npm install && cd ../client && npm install",
-    "dev:server": "cd server && npm run dev",
-    "dev:client": "cd client && npm start",
+    "install:server": "cd server && npm install",
     "build:server": "cd server && npm run build",
-    "build:client": "cd client && npm run build",
-    "start:server": "cd server && npm run start"
+    "start": "cd server && npm run start",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm start"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/congyu1995/mood-bottle.git"
+    "url": "https://github.com/congyu1995/xiaohaixin-bottle2.git"
   },
   "keywords": [
     "mood",
