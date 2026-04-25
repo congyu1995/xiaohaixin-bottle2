@@ -10,6 +10,13 @@ import { limiter, publishLimiter, errorHandler, notFoundHandler } from './middle
 // 加载环境变量
 dotenv.config();
 
+// 环境变量验证
+console.log('🔍 检查环境变量...');
+console.log('NODE_ENV:', process.env.NODE_ENV || '未设置');
+console.log('PORT:', process.env.PORT || '未设置 (将使用默认值 3001)');
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? '已设置 ✓' : '未设置 ✗');
+console.log('CLIENT_URL:', process.env.CLIENT_URL || '未设置 (将允许所有来源)');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -22,9 +29,6 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
-
-// 静态文件服务（用于部署前端）
-app.use(express.static('public'));
 
 // 速率限制
 app.use('/api/', limiter);
@@ -41,6 +45,10 @@ app.get('/health', (req, res) => {
     success: true,
     message: '服务正常运行',
     timestamp: new Date().toISOString(),
+    env: {
+      nodeEnv: process.env.NODE_ENV || 'development',
+      hasMongoUri: !!process.env.MONGODB_URI,
+    },
   });
 });
 
@@ -65,35 +73,49 @@ app.use(errorHandler);
 // 启动服务器
 const startServer = async (): Promise<void> => {
   try {
+    console.log('\n╔══════════════════════════════════════════╗');
+    console.log('║                                          ║');
+    console.log('║   🌊 小海星·心情漂流瓶                   ║');
+    console.log('║                                          ║');
+    console.log('╚══════════════════════════════════════════╝\n');
+    
+    // 连接数据库
     await connectDB();
     
+    // 启动HTTP服务器
     app.listen(PORT, () => {
-      console.log(`
-╔══════════════════════════════════════════╗
-║                                          ║
-║   🌊 心情漂流瓶服务器已启动               ║
-║                                          ║
-║   端口: ${PORT}                          ║
-║   环境: ${process.env.NODE_ENV || 'development'}                    ║
-║                                          ║
-╚══════════════════════════════════════════╝
-      `);
+      console.log(`\n✅ 服务器启动成功!`);
+      console.log(`📍 端口: ${PORT}`);
+      console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 健康检查: http://localhost:${PORT}/health`);
+      console.log(`\n按 Ctrl+C 停止服务器\n`);
     });
   } catch (error) {
-    console.error('❌ 服务器启动失败:', error);
+    console.error('\n❌ 服务器启动失败:', error);
     process.exit(1);
   }
 };
 
 // 优雅关闭
 process.on('SIGTERM', () => {
-  console.log('📤 收到SIGTERM信号，正在关闭服务器...');
+  console.log('\n📤 收到SIGTERM信号，正在关闭服务器...');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('📤 收到SIGINT信号，正在关闭服务器...');
+  console.log('\n📤 收到SIGINT信号，正在关闭服务器...');
   process.exit(0);
+});
+
+// 未捕获异常处理
+process.on('uncaughtException', (error) => {
+  console.error('❌ 未捕获的异常:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ 未处理的Promise拒绝:', reason);
+  process.exit(1);
 });
 
 startServer();
