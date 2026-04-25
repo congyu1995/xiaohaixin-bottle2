@@ -7,8 +7,8 @@ WORKDIR /app
 # 复制package文件
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci --only=production
+# 安装依赖（包括devDependencies用于构建）
+RUN npm install
 
 # 复制TypeScript配置
 COPY tsconfig.json ./
@@ -23,7 +23,7 @@ RUN npm run build
 EXPOSE 3001
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node healthcheck.js || exit 1
 
 # 启动应用
