@@ -4,10 +4,9 @@
   "description": "小海星·心情漂流瓶 - 匿名心情分享应用",
   "private": true,
   "scripts": {
+    "start": "cd server && npm start",
+    "build": "cd server && npm run build",
     "install:all": "cd server && npm install && cd ../client && npm install",
-    "install:server": "cd server && npm install",
-    "build:server": "cd server && npm run build",
-    "start": "cd server && npm run start",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm start"
   },
@@ -24,5 +23,8 @@
     "mongodb"
   ],
   "author": "congyu1995",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
